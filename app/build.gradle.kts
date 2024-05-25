@@ -1,7 +1,9 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.jetbrains.kotlin.android)
     id("com.google.gms.google-services")
+    kotlin("android")
+    kotlin("kapt")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -61,6 +63,8 @@ dependencies {
     implementation(libs.core.splashscreen)
     implementation(libs.compose.material3)
     implementation(libs.firebase.firestore)
+    implementation(libs.material3.android)
+    implementation(libs.translate)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.ui.test.junit4)
     debugImplementation(libs.ui.tooling)
@@ -68,8 +72,11 @@ dependencies {
     implementation(libs.material.icons.extended)
     implementation(libs.horologist.compose.layout)
     implementation (libs.compose.navigation)
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.accompanist.permissions)
 
 
 }

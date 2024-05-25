@@ -53,7 +53,7 @@ class NotesRepository @Inject constructor(private val firestoreRef: FirebaseFire
     }
     fun upsertNote(note: Note) {
         databaseReference?.apply {
-           document(note.id.toString()).set(note).addOnCompleteListener {
+           document(note.id).set(note).addOnCompleteListener {
                 if (it.isSuccessful) {
                     Log.d("USMAN-TAG", "Note added")
                 }
@@ -70,7 +70,7 @@ class NotesRepository @Inject constructor(private val firestoreRef: FirebaseFire
         }
     }
 
-    suspend fun deleteNotes(noteId: Int) {
+    suspend fun deleteNotes(noteId: String) {
         try {
             databaseReference?.apply {
                 document(noteId.toString()).delete().await()
@@ -80,8 +80,8 @@ class NotesRepository @Inject constructor(private val firestoreRef: FirebaseFire
         }
     }
 
-    suspend fun getNoteById(noteId : Int):Note?{
-        return databaseReference?.document(noteId.toString())?.get()?.await()?.toObject(Note::class.java)
+    suspend fun getNoteById(noteId : String):Note?{
+        return databaseReference?.document(noteId)?.get()?.await()?.toObject(Note::class.java)
 
     }
 }

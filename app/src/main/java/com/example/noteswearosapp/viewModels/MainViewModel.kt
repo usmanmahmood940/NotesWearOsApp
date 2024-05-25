@@ -22,7 +22,7 @@ class MainViewModel @Inject constructor(private val repository: NotesRepository 
     fun upsertNote(note: Note) {
         repository.upsertNote(note)
     }
-    suspend fun deleteNotes(noteId: Int) {
+    suspend fun deleteNotes(noteId: String) {
         repository.deleteNotes(noteId)
     }
 

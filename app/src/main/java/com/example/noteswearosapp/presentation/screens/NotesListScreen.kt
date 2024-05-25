@@ -1,4 +1,4 @@
-package com.example.noteswearosapp.presentation
+package com.example.noteswearosapp.presentation.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -12,12 +12,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.material.CardDefaults
@@ -25,32 +28,34 @@ import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TitleCard
 import androidx.wear.compose.material3.IconButton
+import com.example.noteswearosapp.Utils.CustomResponse
 import com.example.noteswearosapp.models.Note
 import com.example.noteswearosapp.presentation.theme.LightOrange
 import com.example.noteswearosapp.presentation.theme.Orange
+import com.example.noteswearosapp.viewModels.MainViewModel
 
 
 @Composable
 fun NotesListScreen(onNoteClick: (Note) -> Unit, onAddNoteClick: () -> Unit){
-//    val mainViewModel: MainViewModel = hiltViewModel()
-//    val response = mainViewModel.notesStateFlow.collectAsState().value
-//    LaunchedEffect(Unit){
-//        mainViewModel.getNotes()
-//    }
+    val mainViewModel: MainViewModel = hiltViewModel()
+    val response = mainViewModel.notesStateFlow.collectAsState().value
+    LaunchedEffect(Unit){
+        mainViewModel.getNotes()
+    }
 
     Box (modifier = Modifier.padding(top = 10.dp)){
-        val notesList = mutableListOf<Note>(
-            Note(
-                title = "Title 1",
-                content = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut nisl nec purus lacinia tincidunt. Nullam nec nunc nec purus lacinia tincidunt. Nullam nec nunc"
-            ),
-            Note(
-                title = "Title 2",
-                content = "Content 2"
-            ),
-        )
-        NotesList(notesList){
-            onNoteClick(it)
+        when(response){
+            is CustomResponse.Loading -> {
+                // Show loading
+            }
+            is CustomResponse.Success -> {
+                NotesList(response.notesList){
+                    onNoteClick(it)
+                }
+            }
+
+            is CustomResponse.Error -> {
+            }
         }
         AddIconButton(){
             onAddNoteClick()
@@ -125,8 +130,9 @@ fun BoxScope.AddIconButton(onClick: () -> Unit) {
     ) {
 
         Icon(
-            modifier = Modifier.
-            size(20.dp).align(Alignment.Center),
+            modifier = Modifier
+                .size(20.dp)
+                .align(Alignment.Center),
             imageVector = Icons.Default.Add,
             contentDescription = "Add Note",
             tint = Color.White
