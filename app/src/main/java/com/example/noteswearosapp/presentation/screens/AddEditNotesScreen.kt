@@ -1,8 +1,6 @@
 package com.example.noteswearosapp.presentation.screens
 
 import android.Manifest
-import android.speech.SpeechRecognizer
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,14 +12,11 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -37,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -44,12 +40,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
-import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.wear.compose.material.Button
-import com.example.noteswearosapp.Utils.HelperClass.generateRandomStringWithTime
-import com.example.noteswearosapp.models.Note
 import com.example.noteswearosapp.presentation.MainActivity
 import com.example.noteswearosapp.presentation.theme.LightOrange
 import com.example.noteswearosapp.viewModels.AddEditNotesViewModel
@@ -83,8 +74,6 @@ fun AddEditNotesScreen(isEdit: Boolean=false,noteId: String? = null ,onFinish:()
             }
 
         }
-    } else {
-        Toast.makeText(context, "Permission Given Already", Toast.LENGTH_SHORT).show()
     }
 
     if(isEdit){
@@ -106,7 +95,7 @@ fun AddEditNotesScreen(isEdit: Boolean=false,noteId: String? = null ,onFinish:()
             Title(
                 Modifier
                     .align(Alignment.CenterHorizontally)
-                    .weight(3f), addEditNotesViewModel.noteTitle
+                    .weight(3f), addEditNotesViewModel.noteTitle,addEditNotesViewModel.focusedTitle
             )
             Content(Modifier.weight(6f), addEditNotesViewModel.noteContent)
             BottomButtonsBar(
@@ -152,11 +141,19 @@ fun AddEditNotesScreen(isEdit: Boolean=false,noteId: String? = null ,onFinish:()
 }
 
 @Composable
-fun Title(modifier: Modifier = Modifier, noteTitle: MutableState<String>) {
+fun Title(
+    modifier: Modifier = Modifier,
+    noteTitle: MutableState<String>,
+    focusedTitle: MutableState<Boolean>
+) {
     TextField(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.White),
+            .background(Color.White)
+            .onFocusChanged { focusState ->
+                focusedTitle.value = focusState.isFocused
+            }
+        ,
         colors = TextFieldDefaults.colors(
             focusedIndicatorColor = Color.White,
             unfocusedIndicatorColor = Color.White,
@@ -178,7 +175,8 @@ fun Title(modifier: Modifier = Modifier, noteTitle: MutableState<String>) {
 }
 
 @Composable
-fun Content(modifier: Modifier = Modifier, noteContent: MutableState<String>) {
+fun Content(modifier: Modifier = Modifier, noteContent: MutableState<String>, focusedContent: MutableState<Boolean>
+) {
 
     TextField(
         modifier = modifier

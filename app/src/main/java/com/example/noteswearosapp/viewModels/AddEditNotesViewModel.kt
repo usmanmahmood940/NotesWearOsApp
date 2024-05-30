@@ -14,6 +14,9 @@ class AddEditNotesViewModel @Inject constructor(private val repository: NotesRep
     var noteContent = mutableStateOf("")
     var noteId:String = ""
 
+    var focusedContent = mutableStateOf(false)
+    var focusedTitle = mutableStateOf(false)
+
 
     fun upsertNote(note: Note) {
         repository.upsertNote(note)
