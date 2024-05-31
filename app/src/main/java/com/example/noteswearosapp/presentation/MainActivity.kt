@@ -10,6 +10,7 @@ import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -48,10 +49,6 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private lateinit var  recognitionIntent: Intent
-    lateinit var speechRecognizer: SpeechRecognizer
-
-    private val viewModel: AddEditNotesViewModel by viewModels()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,72 +59,19 @@ class MainActivity : ComponentActivity() {
         setTheme(android.R.style.Theme_DeviceDefault)
 
         setContent {
-            WearApp("Android")
+            WearApp()
         }
-    }
-
-    fun setupSpeechRecognizer() {
-        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
-        speechRecognizer.setRecognitionListener(speechRecognitionListener)
-        recognitionIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-        val supportedLanguages = arrayOf(TranslateLanguage.ENGLISH, TranslateLanguage.HINDI, TranslateLanguage.GERMAN)
-        recognitionIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, supportedLanguages.joinToString(","))
-        recognitionIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-
-    }
-    fun startListening() {
-        try {
-            speechRecognizer.startListening(recognitionIntent)
-        } catch (e: ActivityNotFoundException) {
-            Log.d("Error", "No voice recognition")
-            e.printStackTrace()
-        }
-    }
-
-    val speechRecognitionListener = object : RecognitionListener {
-        override fun onReadyForSpeech(params: Bundle?) {
-            Log.d("SpeechRecognition", "Error: 2")
-
+        SpeechRecognizer.isRecognitionAvailable(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            SpeechRecognizer.isOnDeviceRecognitionAvailable(this)
         }
 
-        override fun onBeginningOfSpeech() {
-            Log.d("SpeechRecognition", "Error: 1")
-
-        }
-
-        override fun onRmsChanged(rmsdB: Float) {}
-
-        override fun onBufferReceived(buffer: ByteArray?) {}
-
-        override fun onEndOfSpeech() {
-            Log.d("SpeechRecognition", "Error: 3")
-
-        }
-
-        override fun onError(error: Int) {
-            Log.d("SpeechRecognition", "Error: $error")
-        }
-
-        override fun onResults(results: Bundle?) {
-            Log.d("SpeechRecognition", "Error: 4")
-
-            val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-            matches?.get(0)?.let {
-                viewModel.noteContent.value = it
-            }
-        }
-
-        override fun onPartialResults(partialResults: Bundle?) {
-            Log.d("SpeechRecognition", "Error: 5")
-
-        }
-
-        override fun onEvent(eventType: Int, params: Bundle?) {}
     }
 }
 
+
 @Composable
-fun WearApp(greetingName: String) {
+fun WearApp() {
     NotesWearOsAppTheme {
         Box(
             modifier = Modifier
