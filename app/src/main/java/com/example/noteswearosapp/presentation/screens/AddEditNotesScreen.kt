@@ -27,11 +27,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -239,11 +241,33 @@ fun ColumnScope.BottomButtonsBar(
             iconColor = if (micState) Color.Green else Color.Black
         )
     }
-    Divider(
+    HorizontalDivider(
         modifier = Modifier
             .fillMaxWidth()
             .weight(0.05f), color = Color.Black
     )
+
+    if (isEdit) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1.5f)
+                .background(LightOrange),
+            horizontalArrangement = Arrangement.End
+        ) {
+
+            ActionButton(
+                onClick = {
+                    onDelete()
+                }, contentDescription = "Delete Note", icon = Icons.Default.Delete
+            )
+        }
+        HorizontalDivider(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.05f), color = Color.Black
+        )
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -251,6 +275,7 @@ fun ColumnScope.BottomButtonsBar(
             .background(LightOrange),
         horizontalArrangement = Arrangement.End
     ) {
+
         ActionButton(
             onClick = {
                 onSave()

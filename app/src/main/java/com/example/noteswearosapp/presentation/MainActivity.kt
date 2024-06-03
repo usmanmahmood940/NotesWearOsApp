@@ -34,10 +34,13 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.requestPermissions
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import com.example.noteswearosapp.Utils.Const.NOTE_ID
 import com.example.noteswearosapp.presentation.screens.AddEditNotesScreen
 import com.example.noteswearosapp.presentation.screens.NotesListScreen
 import com.example.noteswearosapp.presentation.screens.Screens
@@ -97,7 +100,7 @@ fun App() {
             NotesListScreen(
                 onNoteClick = {
                     // onNoteClick
-                    Toast.makeText(context, "Note clicked", Toast.LENGTH_SHORT).show()
+                    navController.navigate("${Screens.EditNoteScreen.name}/${it.id}")
                 },
                 onAddNoteClick = {
                     navController.navigate(Screens.AddNoteScreen.name)
@@ -109,6 +112,18 @@ fun App() {
 
             AddEditNotesScreen() {
                 navController.popBackStack()
+            }
+        }
+        composable(
+            route="${Screens.EditNoteScreen.name}/{${NOTE_ID}}",
+            arguments = listOf(navArgument(NOTE_ID){
+                type = NavType.StringType
+            })
+        ){
+            it.arguments?.getString(NOTE_ID)?.let { noteId ->
+                AddEditNotesScreen(isEdit = true,noteId = noteId){
+                    navController.popBackStack()
+                }
             }
         }
     }

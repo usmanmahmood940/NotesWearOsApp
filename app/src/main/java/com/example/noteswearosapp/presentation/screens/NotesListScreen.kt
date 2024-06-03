@@ -43,7 +43,7 @@ fun NotesListScreen(onNoteClick: (Note) -> Unit, onAddNoteClick: () -> Unit){
         mainViewModel.getNotes()
     }
 
-    Box (modifier = Modifier.padding(top = 10.dp)){
+    Box (modifier = Modifier.padding(top = 15.dp)){
         when(response){
             is CustomResponse.Loading -> {
                 // Show loading
