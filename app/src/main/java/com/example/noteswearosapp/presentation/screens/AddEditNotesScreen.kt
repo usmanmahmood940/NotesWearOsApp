@@ -1,13 +1,17 @@
 package com.example.noteswearosapp.presentation.screens
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
-import android.widget.Toast
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,21 +23,18 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -52,14 +53,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
-import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.wear.compose.material.Button
 import com.example.noteswearosapp.R
 import com.example.noteswearosapp.Utils.HelperClass.generateRandomStringWithTime
 import com.example.noteswearosapp.models.Note
-import com.example.noteswearosapp.presentation.MainActivity
 import com.example.noteswearosapp.presentation.theme.LightOrange
 import com.example.noteswearosapp.viewModels.AddEditNotesViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -79,13 +76,34 @@ fun AddEditNotesScreen(isEdit: Boolean = false, noteId: String? = null, onFinish
     val addEditNotesViewModel: AddEditNotesViewModel = hiltViewModel()
     var isLoaded by remember { mutableStateOf(true) }
 
-    val context = LocalContext.current
-    val speechRecognizer = remember { SpeechRecognizer.createSpeechRecognizer(context) }
-    val recognitionIntent by remember { mutableStateOf(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)) }
-    CheckPermission()
-    LaunchedEffect(Unit) {
-        setupSpeechRecognizer(speechRecognizer, recognitionIntent, addEditNotesViewModel)
+
+
+    var spokenText by remember { mutableStateOf<String?>(null) }
+
+    val speechRecognizerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data
+            val results = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            spokenText = results?.firstOrNull()
+            spokenText?.let {
+                addEditNotesViewModel.apply {
+                    if (focusedContent.value) {
+                        noteContent.value = noteContent.value + " " + it
+                    }
+                    else if (focusedTitle.value) {
+                        noteTitle.value = it
+                    }
+                    else{
+                        noteContent.value = noteContent.value + " " + it
+                    }
+
+                }
+            }
+        }
     }
+    CheckPermission()
     if (isEdit) {
         LaunchedEffect(Unit) {
             isLoaded = false
@@ -137,8 +155,7 @@ fun AddEditNotesScreen(isEdit: Boolean = false, noteId: String? = null, onFinish
                         }
                     }
                 },
-                speechRecognizer = speechRecognizer,
-                recognitionIntent = recognitionIntent
+                speechRecognizerLauncher = speechRecognizerLauncher
             )
 
         }
@@ -220,8 +237,7 @@ fun ColumnScope.BottomButtonsBar(
     isEdit: Boolean = false,
     onDelete: () -> Unit,
     onSave: () -> Unit,
-    speechRecognizer: SpeechRecognizer,
-    recognitionIntent: Intent
+    speechRecognizerLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>
 ) {
     val addEditNotesViewModel: AddEditNotesViewModel = hiltViewModel()
     val micState by remember {
@@ -235,7 +251,7 @@ fun ColumnScope.BottomButtonsBar(
         horizontalArrangement = Arrangement.End
     ) {
         ActionButton(
-            onClick = { startListening(speechRecognizer, recognitionIntent) },
+            onClick = { startListening(speechRecognizerLauncher)},
             contentDescription = "Voice Type",
             icon = ImageVector.vectorResource(id = R.drawable.ic_mic),
             iconColor = if (micState) Color.Green else Color.Black
@@ -308,80 +324,13 @@ fun RowScope.ActionButton(onClick: () -> Unit, contentDescription: String, icon:
 
 }
 
-fun setupSpeechRecognizer(
-    speechRecognizer: SpeechRecognizer,
-    recognitionIntent: Intent,
-    viewModel: AddEditNotesViewModel
-) {
-    speechRecognizer.setRecognitionListener(speechRecognitionListener(viewModel))
-    val supportedLanguages =
-        arrayOf(TranslateLanguage.ENGLISH, TranslateLanguage.HINDI, TranslateLanguage.GERMAN)
-    recognitionIntent.putExtra(
-        RecognizerIntent.EXTRA_LANGUAGE,
-        supportedLanguages.joinToString(",")
-    )
-    recognitionIntent.putExtra(
-        RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-    )
 
-}
-
-fun startListening(speechRecognizer: SpeechRecognizer, recognitionIntent: Intent) {
-    try {
-        speechRecognizer.startListening(recognitionIntent)
-    } catch (e: Exception) {
-        Log.d("Error", "No voice recognition")
-        e.printStackTrace()
+fun startListening(speechRecognizerLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>) {
+    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
+        putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak to text")
     }
+    speechRecognizerLauncher.launch(intent)
 }
 
-fun speechRecognitionListener(viewModel: AddEditNotesViewModel): RecognitionListener {
-    return object : RecognitionListener {
-        override fun onReadyForSpeech(params: Bundle?) {
-            viewModel.micState.value = true
-        }
-
-        override fun onBeginningOfSpeech() {
-            viewModel.micState.value = true
-        }
-
-        override fun onRmsChanged(rmsdB: Float) {}
-
-        override fun onBufferReceived(buffer: ByteArray?) {}
-
-        override fun onEndOfSpeech() {
-            Log.d("SpeechRecognition", "End of speech")
-        }
-
-        override fun onError(error: Int) {
-            Log.d("SpeechRecognition", "Error: $error")
-        }
-
-        override fun onResults(results: Bundle?) {
-            Log.d("SpeechRecognition", "Results received")
-            val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-            matches?.get(0)?.let {
-                viewModel.apply {
-                    if (focusedContent.value) {
-                        noteContent.value = noteContent.value + " " + it
-                    }
-                    else if (focusedTitle.value) {
-                        noteTitle.value = it
-                    }
-                    else{
-                        noteContent.value = noteContent.value + " " + it
-                    }
-
-                }
-            }
-            viewModel.micState.value = false
-        }
-
-        override fun onPartialResults(partialResults: Bundle?) {
-            Log.d("SpeechRecognition", "Partial results received")
-        }
-
-        override fun onEvent(eventType: Int, params: Bundle?) {}
-    }
-}
